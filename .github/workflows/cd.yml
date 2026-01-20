@@ -31,7 +31,7 @@ jobs:
           version: 'v1.28.0'
 
       - name: Configure kubectl for production cluster
-        if: ${{ secrets.KUBECONFIG != '' }}
+        if: ${{ secrets.KUBECONFIG }}
         run: |
           mkdir -p $HOME/.kube
           echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
@@ -39,7 +39,7 @@ jobs:
           echo "Using production Kubernetes cluster"
 
       - name: Create kind cluster (demo mode)
-        if: ${{ secrets.KUBECONFIG == '' }}
+        if: ${{ !secrets.KUBECONFIG }}
         uses: helm/kind-action@v1.8.0
         with:
           cluster_name: devops-demo
@@ -57,7 +57,7 @@ jobs:
 
       # 5. Login to DockerHub (for production cluster or manual push)
       - name: Login to DockerHub
-        if: ${{ secrets.KUBECONFIG != '' && secrets.DOCKERHUB_USERNAME != '' && secrets.DOCKERHUB_TOKEN != '' }}
+        if: ${{ secrets.KUBECONFIG && secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -65,7 +65,7 @@ jobs:
 
       # 6. Build and push images (production mode)
       - name: Build and push images to DockerHub
-        if: ${{ secrets.KUBECONFIG != '' }}
+        if: ${{ secrets.KUBECONFIG }}
         run: |
           echo "Building and pushing images for production cluster..."
           docker build -t ${{ env.DOCKERHUB_USERNAME }}/job-api:latest -t ${{ env.DOCKERHUB_USERNAME }}/job-api:${{ github.sha }} services/job-api
@@ -81,7 +81,7 @@ jobs:
 
       # 7. Build and load images to kind (demo mode)
       - name: Build and load images to kind
-        if: ${{ secrets.KUBECONFIG == '' }}
+        if: ${{ !secrets.KUBECONFIG }}
         run: |
           echo "Building images for kind cluster..."
           docker build -t ${{ env.DOCKERHUB_USERNAME }}/job-api:latest services/job-api
