@@ -1,0 +1,161 @@
+name: CD - Deploy to Kubernetes
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  KUBECTL_VERSION: 'v1.28.0'
+
+jobs:
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout Code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Setup kubectl
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+
+      # 3. Configure Kubernetes context
+      # NOTE: In production, you would configure kubeconfig from secrets
+      # This example assumes you have kubeconfig stored as a secret
+      - name: Configure kubectl
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > $HOME/.kube/config
+          kubectl config current-context
+
+      # 4. Update image references with DockerHub username
+      - name: Update Kubernetes manifests
+        run: |
+          sed -i "s|YOUR_DOCKERHUB_USERNAME|${{ secrets.DOCKERHUB_USERNAME }}|g" k8s/*.yaml
+
+      # 5. Apply ConfigMap
+      - name: Apply ConfigMap
+        run: kubectl apply -f k8s/configmap.yaml
+
+      # 6. Deploy Redis
+      - name: Deploy Redis
+        run: kubectl apply -f k8s/redis.yaml
+
+      # 7. Deploy RabbitMQ
+      - name: Deploy RabbitMQ
+        run: kubectl apply -f k8s/rabbitmq.yaml
+
+      # 8. Wait for infrastructure to be ready
+      - name: Wait for Redis and RabbitMQ
+        run: |
+          echo "Waiting for Redis..."
+          kubectl wait --for=condition=ready pod -l app=redis --timeout=120s
+
+          echo "Waiting for RabbitMQ..."
+          kubectl wait --for=condition=ready pod -l app=rabbitmq --timeout=120s
+
+      # 9. Deploy Job API
+      - name: Deploy Job API
+        run: kubectl apply -f k8s/job-api.yaml
+
+      # 10. Deploy Worker
+      - name: Deploy Worker
+        run: kubectl apply -f k8s/worker.yaml
+
+      # 11. Deploy Control Plane
+      - name: Deploy Control Plane
+        run: kubectl apply -f k8s/control-plane.yaml
+
+      # 12. Wait for all deployments to be ready
+      - name: Wait for deployments
+        run: |
+          echo "Waiting for Job API..."
+          kubectl rollout status deployment/job-api --timeout=180s
+
+          echo "Waiting for Worker..."
+          kubectl rollout status deployment/worker --timeout=180s
+
+          echo "Waiting for Control Plane..."
+          kubectl rollout status deployment/control-plane --timeout=180s
+
+      # 13. Verify pod status
+      - name: Verify pod status
+        run: |
+          echo "=== Pod Status ==="
+          kubectl get pods
+
+          echo -e "\n=== Services ==="
+          kubectl get services
+
+      # 14. Run smoke tests
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+
+          # Get Job API service endpoint
+          JOB_API_IP=$(kubectl get svc job-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          if [ -z "$JOB_API_IP" ]; then
+            JOB_API_IP=$(kubectl get svc job-api -o jsonpath='{.spec.clusterIP}')
+          fi
+
+          # Port forward for local testing (alternative to LoadBalancer)
+          kubectl port-forward svc/job-api 3000:3000 &
+          sleep 5
+
+          # Test 1: Health check
+          echo "Test 1: Health check"
+          curl -f http://localhost:3000/health || exit 1
+
+          # Test 2: Submit a test job
+          echo "Test 2: Submit a job"
+          curl -X POST http://localhost:3000/jobs \
+            -H "Content-Type: application/json" \
+            -d '{
+              "jobType": "email",
+              "payload": {
+                "to": "test@example.com",
+                "subject": "Test Email"
+              }
+            }' || exit 1
+
+          # Test 3: Check control plane
+          kubectl port-forward svc/control-plane 3002:3002 &
+          sleep 5
+
+          echo "Test 3: Check control plane metrics"
+          curl -f http://localhost:3002/metrics || exit 1
+
+          echo "Smoke tests passed!"
+
+      # 15. Display deployment information
+      - name: Display deployment info
+        run: |
+          echo "=== Deployment Complete ==="
+          echo "Environment: ${{ inputs.environment }}"
+          echo ""
+          echo "Services:"
+          kubectl get svc job-api control-plane
+          echo ""
+          echo "Endpoints:"
+          echo "- Job API: http://$(kubectl get svc job-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):3000"
+          echo "- Control Plane: http://$(kubectl get svc control-plane -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):3002"
+
+      # 16. Notify on failure
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Deployment failed!"
+          kubectl get pods
+          kubectl describe pods

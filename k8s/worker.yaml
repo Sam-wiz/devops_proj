@@ -1,0 +1,80 @@
+---
+# Worker Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: default
+  labels:
+    app: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: worker
+        image: samrudhvandakudri2005/worker:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3001
+          name: http
+        env:
+        - name: PORT
+          value: "3001"
+        - name: RABBITMQ_URL
+          valueFrom:
+            configMapKeyRef:
+              name: job-system-config
+              key: RABBITMQ_URL
+        - name: REDIS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: job-system-config
+              key: REDIS_URL
+        - name: FAILURE_THRESHOLD
+          valueFrom:
+            configMapKeyRef:
+              name: job-system-config
+              key: FAILURE_THRESHOLD
+        - name: COOLDOWN_PERIOD
+          valueFrom:
+            configMapKeyRef:
+              name: job-system-config
+              key: COOLDOWN_PERIOD
+        - name: MAX_RETRIES
+          valueFrom:
+            configMapKeyRef:
+              name: job-system-config
+              key: MAX_RETRIES
+        - name: RETRY_DELAY_MS
+          valueFrom:
+            configMapKeyRef:
+              name: job-system-config
+              key: RETRY_DELAY_MS
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3001
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
