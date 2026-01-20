@@ -2,8 +2,8 @@
 
 **Project Title:** Self-Healing Async Job Processing System with Circuit Breaker
 
-**Student Name:** [Your Name]
-**Scaler Student ID:** [Your ID]
+**Student Name:** Samrudh
+**Scaler Student ID:** BCS10123
 **GitHub Repository:** https://github.com/Sam-wiz/devops_proj
 **Submission Date:** January 20, 2026
 
