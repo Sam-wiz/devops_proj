@@ -36,7 +36,7 @@ export class WorkerController {
           console.log(`Job ${job.jobType} acknowledged (success)`);
           break;
 
-        case 'retry':
+        case 'retry': {
           // Retry - publish to retry queue with incremented attempt count
           const retryJob = {
             ...job,
@@ -50,8 +50,9 @@ export class WorkerController {
           channel.ack(originalMsg); // Ack original message
           console.log(`Job ${job.jobType} sent to retry queue`);
           break;
+        }
 
-        case 'quarantine':
+        case 'quarantine': {
           // Quarantine - publish to quarantine queue
           const quarantineJob = {
             ...job,
@@ -63,6 +64,7 @@ export class WorkerController {
           channel.ack(originalMsg); // Ack original message
           console.log(`Job ${job.jobType} quarantined: ${decision.reason}`);
           break;
+        }
       }
     } catch (error) {
       console.error(`Error handling job: ${error.message}`);
@@ -77,9 +79,6 @@ export class WorkerController {
    */
   @MessagePattern('job.retry')
   async handleRetryJob(@Payload() job: JobMessage, @Ctx() context: RmqContext) {
-    const channel = context.getChannelRef();
-    const originalMsg = context.getMessage();
-
     console.log(`Processing retry job: ${job.jobType}, attempt: ${job.metadata.attemptCount}`);
 
     // Re-process through the same logic

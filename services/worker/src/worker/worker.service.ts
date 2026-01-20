@@ -58,7 +58,7 @@ export class WorkerService {
       } else {
         // On failure, increment counter and check threshold
         const errorCode = result.errorCode || 'UNKNOWN_ERROR';
-        const failureCount = await this.circuitBreaker.incrementFailure(job.jobType, errorCode);
+        await this.circuitBreaker.incrementFailure(job.jobType, errorCode);
 
         const shouldOpen = await this.circuitBreaker.shouldOpenCircuit(job.jobType, errorCode);
 
