@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
       - name: control-plane
-        image: samrudhvandakudri2005/control-plane:latest
-        imagePullPolicy: Always
+        image: YOUR_DOCKERHUB_USERNAME/control-plane:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3002
           name: http

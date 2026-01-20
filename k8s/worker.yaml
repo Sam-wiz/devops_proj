@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
       - name: worker
-        image: samrudhvandakudri2005/worker:latest
-        imagePullPolicy: Always
+        image: YOUR_DOCKERHUB_USERNAME/worker:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001
           name: http

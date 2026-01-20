@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
       - name: job-api
-        image: samrudhvandakudri2005/job-api:latest
-        imagePullPolicy: Always
+        image: YOUR_DOCKERHUB_USERNAME/job-api:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
           name: http

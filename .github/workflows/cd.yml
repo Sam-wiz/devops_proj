@@ -99,6 +99,13 @@ jobs:
       - name: Apply ConfigMap
         run: kubectl apply -f k8s/configmap.yaml
 
+      # 6.5. Update image references in manifests
+      - name: Update image references
+        run: |
+          sed -i "s|YOUR_DOCKERHUB_USERNAME|${{ env.DOCKERHUB_USERNAME }}|g" k8s/job-api.yaml
+          sed -i "s|YOUR_DOCKERHUB_USERNAME|${{ env.DOCKERHUB_USERNAME }}|g" k8s/worker.yaml
+          sed -i "s|YOUR_DOCKERHUB_USERNAME|${{ env.DOCKERHUB_USERNAME }}|g" k8s/control-plane.yaml
+
       # 7. Deploy Redis
       - name: Deploy Redis
         run: |
