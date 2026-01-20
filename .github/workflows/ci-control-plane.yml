@@ -2,9 +2,9 @@ name: CI - Control Plane
 
 on:
   push:
-    branches: [master, main, develop]
+    branches: [master]
   pull_request:
-    branches: [master, main]
+    branches: [master]
   workflow_dispatch:  # Allows manual trigger
 
 env:
