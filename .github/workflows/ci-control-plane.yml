@@ -16,6 +16,9 @@ jobs:
   ci:
     name: Build and Test Control Plane
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       # 1. Checkout Code

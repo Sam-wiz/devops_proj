@@ -16,6 +16,9 @@ jobs:
   ci:
     name: Build and Test Worker
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
 
     steps:
       # 1. Checkout Code
