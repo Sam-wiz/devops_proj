@@ -3,13 +3,8 @@ name: CI - Control Plane
 on:
   push:
     branches: [main, develop]
-    paths:
-      - 'services/control-plane/**'
-      - '.github/workflows/ci-control-plane.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'services/control-plane/**'
   workflow_dispatch:  # Allows manual trigger
 
 env:

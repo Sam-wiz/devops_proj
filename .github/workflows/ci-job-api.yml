@@ -2,14 +2,9 @@ name: CI - Job API
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - 'services/job-api/**'
-      - '.github/workflows/ci-job-api.yml'
+    branches: [master, main, develop]
   pull_request:
-    branches: [main]
-    paths:
-      - 'services/job-api/**'
+    branches: [master, main]
   workflow_dispatch:  # Allows manual trigger
 
 env:

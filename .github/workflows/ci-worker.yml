@@ -2,14 +2,9 @@ name: CI - Worker
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - 'services/worker/**'
-      - '.github/workflows/ci-worker.yml'
+    branches: [master, main, develop]
   pull_request:
-    branches: [main]
-    paths:
-      - 'services/worker/**'
+    branches: [master, main]
   workflow_dispatch:  # Allows manual trigger
 
 env:
