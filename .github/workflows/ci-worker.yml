@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'services/worker/**'
+  workflow_dispatch:  # Allows manual trigger
 
 env:
   SERVICE_NAME: worker

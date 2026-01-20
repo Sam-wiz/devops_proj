@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'services/control-plane/**'
+  workflow_dispatch:  # Allows manual trigger
 
 env:
   SERVICE_NAME: control-plane
