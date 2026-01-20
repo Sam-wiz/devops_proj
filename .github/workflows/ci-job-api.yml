@@ -20,6 +20,18 @@ jobs:
       contents: read
       security-events: write
 
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       # 1. Checkout Code
       - name: Checkout code
@@ -102,12 +114,12 @@ jobs:
       - name: Run container smoke test
         run: |
           docker run -d --name test-container \
+            --network host \
             -e RABBITMQ_URL=amqp://guest:guest@localhost:5672 \
-            -p 3000:3000 \
             ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
           # Wait for container to start
-          sleep 10
+          sleep 15
 
           # Check health endpoint
           curl -f http://localhost:3000/health || exit 1

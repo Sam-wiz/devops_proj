@@ -20,6 +20,17 @@ jobs:
       contents: read
       security-events: write
 
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       # 1. Checkout Code
       - name: Checkout code
@@ -102,12 +113,12 @@ jobs:
       - name: Run container smoke test
         run: |
           docker run -d --name test-container \
+            --network host \
             -e REDIS_URL=redis://localhost:6379 \
-            -p 3002:3002 \
             ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
 
           # Wait for container to start
-          sleep 10
+          sleep 15
 
           # Check health endpoint
           curl -f http://localhost:3002/health || exit 1
